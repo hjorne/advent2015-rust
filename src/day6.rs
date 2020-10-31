@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::cmp::max;
 use std::fs;
 
@@ -77,42 +78,27 @@ fn part2(input: &Vec<Instr>) {
 }
 
 fn parser(input: &str) -> Vec<Instr> {
+    let re = Regex::new(r"(turn on|turn off|toggle) (\d+),(\d+) through (\d+),(\d+)").unwrap();
     input
         .lines()
         .map(|line| {
-            let split = line.split_whitespace().collect::<Vec<_>>();
-
-            let (instr_type, start, end) = if line.starts_with("toggle") {
-                (
-                    InstrType::Toggle,
-                    str_to_point(split[1]),
-                    str_to_point(split.last().unwrap()),
-                )
-            } else if line.starts_with("turn off") {
-                (
-                    InstrType::TurnOff,
-                    str_to_point(split[2]),
-                    str_to_point(split.last().unwrap()),
-                )
-            } else if line.starts_with("turn on") {
-                (
-                    InstrType::TurnOn,
-                    str_to_point(split[2]),
-                    str_to_point(split.last().unwrap()),
-                )
-            } else {
-                panic!("Unknown string {}", line);
+            let captures = re.captures(line).unwrap();
+            let instr_type = match captures.get(1).unwrap().as_str() {
+                "toggle" => InstrType::Toggle,
+                "turn on" => InstrType::TurnOn,
+                "turn off" => InstrType::TurnOff,
+                _ => panic!("Unknown type"),
             };
+            let x1 = captures.get(2).unwrap().as_str().parse::<usize>().unwrap();
+            let y1 = captures.get(3).unwrap().as_str().parse::<usize>().unwrap();
+            let x2 = captures.get(4).unwrap().as_str().parse::<usize>().unwrap();
+            let y2 = captures.get(5).unwrap().as_str().parse::<usize>().unwrap();
+
             Instr {
                 instr_type,
-                start,
-                end,
+                start: Point(x1, y1),
+                end: Point(x2, y2),
             }
         })
         .collect()
-}
-
-fn str_to_point(s: &str) -> Point {
-    let split: Vec<usize> = s.split(",").map(|string| string.parse().unwrap()).collect();
-    Point(split[0], split[1])
 }
